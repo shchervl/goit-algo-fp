@@ -133,12 +133,43 @@ distances, predecessors = dijkstra(g, "A")
 
 ---
 
+## Завдання 4. Візуалізація бінарної купи
+
+Функція, що візуалізує бінарну купу як дерево. Реалізація використовує базовий код з умови (Node + networkx + matplotlib), розширений `build_tree_from_heap(heap)` — конструює дерево з масиву купи за класичною формулою індексів (`i` → діти `2i+1`, `2i+2`).
+
+Структура пакета `task_04/`:
+
+| Модуль | Призначення |
+|---|---|
+| `heap_tree.py` | `Node`, `build_tree_from_heap(heap, color_fn, validate)` — масив → дерево; `_build_graph` + `_layout` — окремо нетворкс-граф і розкладка; `draw_heap(heap, save, color_fn, validate)` — візуалізація |
+| `demo.py` | Будує min-купу через `heapq.heapify`, малює дерево |
+| `tests/` | 32 тести: Node, побудова з купи, валідація min-heap, розкладка, побудова графа, дублікати, smoke-тести draw_heap |
+
+### Запуск
+
+```bash
+uv run python -m task_04.demo
+```
+
+Інтерактивно у коді:
+```python
+import heapq
+from task_04.heap_tree import draw_heap
+
+data = [10, 4, 5, 1, 3, 7, 2, 8, 6, 9]
+heapq.heapify(data)
+draw_heap(data, save="heap.png")  # або без save= для інтерактивного вікна
+```
+
+---
+
 ## Тести
 
 ```bash
 uv run pytest                # усі тести
 uv run pytest task_01/       # тільки задача 1 (77 тестів)
 uv run pytest task_03/       # тільки задача 3 (62 тести)
+uv run pytest task_04/       # тільки задача 4 (32 тести)
 ```
 
 **task_01** (77 тестів): реверс, сортування злиттям, об'єднання, граничні випадки (порожні списки, `None`, різні типи даних: float, bool, кортежі, кастомний клас з `__lt__`, NaN), а також інваріант «реверс саме переставляє посилання, не створюючи нові вузли».
