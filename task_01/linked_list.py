@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Optional
+from typing import Any, Iterable, Iterator, Optional
 
 
-@dataclass
+@dataclass(slots=True)
 class Node:
-    data: object
+    data: Any
     next: Optional["Node"] = None
 
 

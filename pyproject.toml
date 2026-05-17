@@ -3,9 +3,7 @@ name = "goit-algo-fp"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
-dependencies = [
-    "matplotlib>=3.10.9",
-]
+dependencies = []
 
 [project.scripts]
 pythagoras-tree = "task_02.__main__:main"

@@ -1,6 +1,6 @@
 """Рекурсивна геометрія дерева Піфагора: гілки та квадрати.
 
-Чистий модуль без UI- та рендер-залежностей — імпортується без matplotlib/tkinter.
+Чистий модуль — імпортується без UI-залежностей.
 """
 
 from __future__ import annotations
@@ -12,15 +12,19 @@ Point = tuple[float, float]
 Branch = tuple[Point, Point, int]
 Square = tuple[list[Point], int]
 
+DEFAULT_ANGLE = math.radians(45)
+DEFAULT_RATIO = 1 / math.sqrt(2)
+TRUNK_ANGLE = math.pi / 2  # вертикально вгору
+
 
 def generate_branches(
     depth: int,
     x: float = 0.0,
     y: float = 0.0,
     length: float = 1.0,
-    angle: float = math.pi / 2,
-    angle_split: float = math.radians(45),
-    ratio: float = 1 / math.sqrt(2),
+    angle: float = TRUNK_ANGLE,
+    angle_split: float = DEFAULT_ANGLE,
+    ratio: float = DEFAULT_RATIO,
 ) -> Iterator[Branch]:
     """Рекурсивно генерує гілки дерева як (start, end, remaining).
 
@@ -42,7 +46,7 @@ def generate_branches(
 
 
 def square_corners(x: float, y: float, size: float, angle: float) -> list[Point]:
-    """Чотири кути квадрата проти годинникової стрілки, починаючи з нижнього-лівого."""
+    """Чотири кути квадрата проти годинникової стрілки: [BL, BR, TR, TL]."""
     cos_a, sin_a = math.cos(angle), math.sin(angle)
     return [
         (x, y),
@@ -58,7 +62,7 @@ def generate_squares(
     y: float = 0.0,
     size: float = 1.0,
     angle: float = 0.0,
-    angle_split: float = math.pi / 4,
+    angle_split: float = DEFAULT_ANGLE,
 ) -> Iterator[Square]:
     """Рекурсивно генерує квадрати дерева як (corners, remaining).
 
@@ -72,7 +76,7 @@ def generate_squares(
     if depth == 0:
         return
 
-    top_left = corners[3]
+    _bl, _br, _tr, top_left = corners
     left_angle = angle + angle_split
     left_size = size * math.cos(angle_split)
     apex = (
