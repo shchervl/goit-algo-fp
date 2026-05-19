@@ -10,6 +10,7 @@ import uuid
 from collections.abc import Callable
 from typing import Any
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import networkx as nx
 
@@ -86,6 +87,15 @@ def _build_graph(root: Node) -> nx.DiGraph:
     return graph
 
 
+def _luminance(color: str) -> float:
+    """Перцептивна яскравість 0.0–1.0 за RGB (WCAG-наближення).
+
+    Приймає hex (#rrggbb) або іменований колір matplotlib (skyblue тощо).
+    """
+    r, g, b = mcolors.to_rgb(color)
+    return 0.299 * r + 0.587 * g + 0.114 * b
+
+
 def _layout(root: Node) -> dict[str, tuple[float, float]]:
     """Розкладка дерева: листя рівномірно, батько = середина між дітьми.
 
@@ -120,6 +130,72 @@ def _layout(root: Node) -> dict[str, tuple[float, float]]:
     return {nid: (x - center, y) for nid, (x, y) in pos.items()}
 
 
+def draw_tree(
+    root: Node | None,
+    title: str = "Бінарне дерево",
+    save: str | None = None,
+    node_labels: dict[str, str] | None = None,
+) -> None:
+    """Малює довільне бінарне дерево з кореня. Empty (None) — тихо нічого.
+
+    Args:
+        root: корінь дерева
+        title: заголовок
+        save: якщо вказано, зберігає у PNG
+        node_labels: опц. словник node.id → мітка; інакше — node.val
+    """
+    if root is None:
+        return
+
+    graph = _build_graph(root)
+    pos = _layout(root)
+
+    colors = [data["color"] for _, data in graph.nodes(data=True)]
+    if node_labels is None:
+        labels = {nid: data["label"] for nid, data in graph.nodes(data=True)}
+    else:
+        labels = {
+            nid: node_labels.get(nid, str(data["label"]))
+            for nid, data in graph.nodes(data=True)
+        }
+
+    # адаптивні розміри під розмір дерева
+    n = len(graph.nodes)
+    levels = max(1, n.bit_length())
+    bottom_width = 2 ** (levels - 1)
+    fig_w = max(10.0, min(24.0, bottom_width * 0.8))
+    fig_h = max(6.0, levels * 1.5)
+    node_size = max(720, min(3600, 17280 // n))
+    font_size = max(7, min(11, 90 // levels))
+
+    fig = plt.figure(figsize=(fig_w, fig_h))
+    plt.title(title)
+    nx.draw_networkx_nodes(graph, pos, node_size=node_size, node_color=colors)
+    nx.draw_networkx_edges(graph, pos, arrows=False)
+
+    # Мітки з адаптивним кольором: світлий шрифт на темному фоні, темний на світлому
+    LUMINANCE_THRESHOLD = 0.55
+    dark_bg_labels, light_bg_labels = {}, {}
+    for nid, data in graph.nodes(data=True):
+        if _luminance(data["color"]) < LUMINANCE_THRESHOLD:
+            dark_bg_labels[nid] = labels[nid]
+        else:
+            light_bg_labels[nid] = labels[nid]
+    if dark_bg_labels:
+        nx.draw_networkx_labels(
+            graph, pos, labels=dark_bg_labels, font_size=font_size, font_color="white"
+        )
+    if light_bg_labels:
+        nx.draw_networkx_labels(
+            graph, pos, labels=light_bg_labels, font_size=font_size, font_color="black"
+        )
+    if save:
+        fig.savefig(save, dpi=120, bbox_inches="tight")
+    else:
+        plt.show()
+    plt.close(fig)
+
+
 def draw_heap(
     heap: list[Any],
     title: str = "Бінарна купа",
@@ -137,36 +213,4 @@ def draw_heap(
         validate: якщо True, перевіряє min-heap інваріант
     """
     root = build_tree_from_heap(heap, color_fn=color_fn, validate=validate)
-    if root is None:
-        return  # порожня купа — тихо
-
-    graph = _build_graph(root)
-    pos = _layout(root)
-
-    colors = [data["color"] for _, data in graph.nodes(data=True)]
-    labels = {nid: data["label"] for nid, data in graph.nodes(data=True)}
-
-    # адаптивні розміри під розмір купи (інакше глибокі купи нечитабельні)
-    n = len(heap)
-    levels = max(1, n.bit_length())
-    bottom_width = 2 ** (levels - 1)
-    fig_w = max(10.0, min(24.0, bottom_width * 0.8))
-    fig_h = max(6.0, levels * 1.5)
-    node_size = max(720, min(3600, 17280 // n))
-
-    fig = plt.figure(figsize=(fig_w, fig_h))
-    plt.title(title)
-    nx.draw(
-        graph,
-        pos=pos,
-        labels=labels,
-        arrows=False,
-        node_size=node_size,
-        node_color=colors,
-        font_size=max(7, min(11, 90 // levels)),
-    )
-    if save:
-        fig.savefig(save, dpi=120, bbox_inches="tight")
-    else:
-        plt.show()
-    plt.close(fig)
+    draw_tree(root, title=title, save=save)
